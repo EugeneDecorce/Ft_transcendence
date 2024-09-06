@@ -1,0 +1,55 @@
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
+
+services:
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend/public:/usr/share/nginx/html/public
+      - ./frontend/static:/usr/share/nginx/html/static
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_DB=mydb
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - DB_HOST=db
+    depends_on:
+      - db
+      #condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    # healthcheck:
+    #   #test: ["CMD-SHELL", "pg_isready -U myuser"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+volumes:
+  postgres_data:
